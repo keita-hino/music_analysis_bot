@@ -13,6 +13,7 @@ class LinebotController < ApplicationController
 
   def callback
     body = request.body.read
+    file_path = ""
 
     signature = request.env['HTTP_X_LINE_SIGNATURE']
     unless client.validate_signature(body, signature)
@@ -37,8 +38,26 @@ class LinebotController < ApplicationController
             }
             client.reply_message(event['replyToken'], message)
           end
+        when Line::Bot::Event::MessageType::Audio
+          response = @client.get_message_content(event.message["id"])
+          case response
+          when Net::HTTPSuccess then
+            tf = Tempfile.open("content")
+            file_path = tf.path
+          else
+            p "#{response.code} #{response.body}"
+          end
+          puts "●ここまで"
+          url = "https://api.sonicAPI.com/analyze/chords?access_id=#{ENV['SONIC_API_KEY']}&input_file=#{file_path}"
+          puts "url:#{url}"
+          api = Api.new(url)
+          puts "api.new"
+          api.get
+          puts "api.get"
+
         end
       end
+
     }
 
     head :ok

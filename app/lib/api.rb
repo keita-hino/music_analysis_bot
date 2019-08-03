@@ -5,7 +5,6 @@ class Api
   end
   def get
     uri = URI.parse(url)
-    debugger
     begin
       json = Net::HTTP.get(uri)
       JSON.parse(json)

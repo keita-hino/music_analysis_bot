@@ -40,6 +40,8 @@ class LinebotController < ApplicationController
           end
         when Line::Bot::Event::MessageType::Audio
           response = @client.get_message_content(event.message["id"])
+          dir = "#{Rails.root}/tmp/"
+
           case response
           when Net::HTTPSuccess then
             tf = Tempfile.open("content")
@@ -47,13 +49,16 @@ class LinebotController < ApplicationController
           else
             p "#{response.code} #{response.body}"
           end
-          puts "●ここまで"
+          # a = "https://www.dropbox.com/home/%E3%83%97%E3%83%A9%E3%82%A4%E3%83%99%E3%83%BC%E3%83%88%E7%94%A8?preview=coldrain-Gone+(mp3cut.net).mp3"
+          logger.debug(file_path)
+
           url = "https://api.sonicAPI.com/analyze/chords?access_id=#{ENV['SONIC_API_KEY']}&input_file=#{file_path}"
-          puts "url:#{url}"
+          logger.debug("😆URL：#{url}")
           api = Api.new(url)
-          puts "api.new"
           api.get
-          puts "api.get"
+          logger.debug(api.get)
+
+
 
         end
       end

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 class LinebotController < ApplicationController
   require 'line/bot'  # gem 'line-bot-api'
 
@@ -39,27 +40,45 @@ class LinebotController < ApplicationController
             client.reply_message(event['replyToken'], message)
           end
         when Line::Bot::Event::MessageType::Audio
+          
+          message = {
+            type: 'text',
+            text: 'コード解析中...'
+          }
+
+          client.push_message(event["source"]["userId"], message)
+
           response = @client.get_message_content(event.message["id"])
           dir = "#{Rails.root}/tmp/"
 
           case response
           when Net::HTTPSuccess then
             tf = Tempfile.open("content")
+            tf.write(response.body.force_encoding("ISO-8859-1").encode("UTF-8"))
             file_path = tf.path
+            
+            moved_path = "tmp/#{Time.now}.mp3"
+            File.rename(file_path,moved_path)
           else
             p "#{response.code} #{response.body}"
           end
-          # a = "https://www.dropbox.com/home/%E3%83%97%E3%83%A9%E3%82%A4%E3%83%99%E3%83%BC%E3%83%88%E7%94%A8?preview=coldrain-Gone+(mp3cut.net).mp3"
-          logger.debug(file_path)
+          
+          debugger
+          # file_path = "http://www.sonicAPI.com/music/brown_eyes_by_ueberschall.mp3"
+          url = "https://api.sonicAPI.com/analyze/chords?access_id=#{ENV['SONIC_API_KEY']}&input_file=#{moved_path}&format=json"
 
-          url = "https://api.sonicAPI.com/analyze/chords?access_id=#{ENV['SONIC_API_KEY']}&input_file=#{file_path}"
-          logger.debug("😆URL：#{url}")
           api = Api.new(url)
-          api.get
-          logger.debug(api.get)
+          json = api.get
+          tmp = "コード解析したよ🎵\n"
+          chords = tmp + json["chords_result"]["chords"].map{|v| v["chord"]}.join(",")
 
-
-
+          message = {
+            type: 'text',
+            text: chords
+          }
+          
+          client.reply_message(event['replyToken'], message)
+          
         end
       end
 
